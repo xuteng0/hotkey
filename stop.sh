@@ -1,7 +1,12 @@
 #!/bin/bash
 
-# Define the name of the screen session
-SCREEN_SESSION_NAME="chrome_video_pause_hotkey"
+
+# Load the SCREEN_SESSION_NAME from config.json
+SCREEN_SESSION_NAME=$(jq -r '.screen_session_name' "config.json")
+if [ -z "$SCREEN_SESSION_NAME" ]; then
+    echo "Error: screen_session_name is not set in config.json."
+    exit 1
+fi
 
 # Check if any screen session exists
 if screen -list | grep -q "$SCREEN_SESSION_NAME"; then

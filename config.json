@@ -1,0 +1,6 @@
+{
+  "browser_name": "Chrome",
+  "lock_file_path": "/tmp/video_pause_shortcut_script_lock",
+  "screen_session_name": "chrome_video_pause_hotkey",
+  "python_script_path": "video_pause_shortcut.py"
+}

@@ -1,9 +1,31 @@
 #!/bin/bash
 
-# Define the name of the screen session and the Python script
-SCREEN_SESSION_NAME="chrome_video_pause_hotkey"
-PYTHON_SCRIPT="video_pause_shortcut.py"
-FLAG_FILE = "/tmp/video_pause_shortcut_script_lock"
+# Load the LOCK_FILE path from config.json
+CONFIG_FILE="config.json"
+if [ ! -f "$CONFIG_FILE" ]; then
+    echo "Error: The configuration file $CONFIG_FILE does not exist."
+    exit 1
+fi
+
+# Load the LOCK_FILE path from config.json
+LOCK_FILE=$(jq -r '.lock_file_path' "$CONFIG_FILE")
+if [ -z "$LOCK_FILE" ]; then
+    echo "Error: lock_file_path is not set in $CONFIG_FILE."
+    exit 1
+fi
+
+# Check if the script is already running
+if [ -f "$LOCK_FILE" ]; then
+    echo "Error: $PYTHON_SCRIPT is already running."
+    exit 1
+fi
+
+# load the PYTHON_SCRIPT path from config.json
+PYTHON_SCRIPT=$(jq -r '.python_script_path' "$CONFIG_FILE")
+if [ -z "$PYTHON_SCRIPT" ]; then
+    echo "Error: python_script_path is not set in $CONFIG_FILE."
+    exit 1
+fi
 
 # Check if the Python script exists
 if [ ! -f "$PYTHON_SCRIPT" ]; then
@@ -11,9 +33,9 @@ if [ ! -f "$PYTHON_SCRIPT" ]; then
     exit 1
 fi
 
-# Check if the flag file exists
-if [ -f "$FLAG_FILE" ]; then
-    echo "Error: $PYTHON_SCRIPT is already running."
+SCREEN_SESSION_NAME=$(jq -r '.screen_session_name' "$CONFIG_FILE")
+if [ -z "$SCREEN_SESSION_NAME" ]; then
+    echo "Error: screen_session_name is not set in $CONFIG_FILE."
     exit 1
 fi
 

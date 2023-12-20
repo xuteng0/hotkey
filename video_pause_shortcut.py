@@ -1,14 +1,15 @@
 import os
 import sys
+import json
+from time import sleep
 import atexit
-from pynput import keyboard
+from pynput.keyboard import Key, Controller, HotKey, Listener
 from ewmh import EWMH
 
 ewmh = EWMH()
-keyboardController = keyboard.Controller()
+keyboard_con = Controller()
+config_file = 'config.json'
 
-# Path to the lock file
-lock_file_path = '/tmp/video_pause_shortcut_script_lock'
 
 # Make sure to clean up the lock file
 def clean_up_lock_file():
@@ -17,7 +18,8 @@ def clean_up_lock_file():
     except OSError:
         pass
 
-def pause_video():
+
+def pause_video(window_name):
 
     # get the active window
     window_name = "Chrome"
@@ -29,18 +31,21 @@ def pause_video():
         if (window_name in window_title):
             ewmh.setActiveWindow(window)
             print("Found window: " + window_title)
-            keyboardController.press(keyboard.Key.space)
-            keyboardController.release(keyboard.Key.space)
-            ewmh.setActiveWindow(current_window)
+            sleep(0.1)
+            keyboard_con.press(Key.space)
+            sleep(0.1)
+            keyboard_con.release(Key.space)
+            sleep(0.1)
+            # ewmh.setActiveWindow(current_window)
             break
 
     # flush request
     ewmh.display.flush()
 
 
-def on_activate():
+def on_activate(window_name):
     print("Combination pressed!")
-    pause_video()
+    pause_video(window_name)
 
 
 def on_press(key):
@@ -57,29 +62,31 @@ def on_release(key):
         pass
 
 
-if __name__ == "__main__":    
+if __name__ == "__main__":
+
+    # Load configuration
+    with open(config_file, 'r') as file:
+        config = json.load(file)
+    lock_file_path = config['lock_file_path']
+    window_name = config['browser_name']
+
     # Define the key combination
-    hotkey = keyboard.HotKey(
-        keyboard.HotKey.parse('<ctrl>+<shift>+<space>'), on_activate
+    hotkey = HotKey(
+        HotKey.parse(
+            '<ctrl>+<shift>+<space>'), lambda: on_activate(window_name)
+
     )
-    
-    try:
-        
-        # Check if the lock file exists
-        if os.path.exists(lock_file_path):
-            print("Another instance of the script is already running.")
-            sys.exit()
 
-        # Create the lock file
-        with open(lock_file_path, 'w') as lock_file:
-            lock_file.write('locked')
-            
-        # atexit.register(clean_up_lock_file)
+    # Check if the lock file exists
+    if os.path.exists(lock_file_path):
+        print("Another instance of the script is already running.")
+        sys.exit()
 
-        with keyboard.Listener(on_press=on_press, on_release=on_release) as listener:
-            listener.join()
+    # Create the lock file
+    with open(lock_file_path, 'w') as lock_file:
+        lock_file.write('locked')
 
-    finally:
-        # Clean up the lock file on exit
-        clean_up_lock_file()
+    atexit.register(clean_up_lock_file)
 
+    with Listener(on_press=on_press, on_release=on_release) as listener:
+        listener.join()
